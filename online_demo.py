@@ -16,13 +16,15 @@ from cotracker.predictor import CoTrackerOnlinePredictor
 #use tic and toc to measure time
 from time import time as tic
 from time import time as toc
-tic()
+time0 = tic()
 
 DEFAULT_DEVICE = (
     "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 )
 
 if __name__ == "__main__":
+
+    #initialize the parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--video_path",
@@ -55,7 +57,7 @@ if __name__ == "__main__":
 
     window_frames = []
 
-    def _process_step(window_frames, is_first_step, grid_size, grid_query_frame):
+    def _process_step(window_frames, is_first_step, grid_size = 10, grid_query_frame = 0, query_frame=None):
         video_chunk = (
             torch.tensor(
                 np.stack(window_frames[-model.step * 2 :]), device=DEFAULT_DEVICE
@@ -68,6 +70,7 @@ if __name__ == "__main__":
             is_first_step=is_first_step,
             grid_size=grid_size,
             grid_query_frame=grid_query_frame,
+            queries = query_frame
         )
 
     # Iterating over video frames, processing one window at a time:
@@ -108,6 +111,6 @@ if __name__ == "__main__":
     )
 
     # get time
-    toc()
-    atime = toc()-tic
+    time1 = toc()
+    atime = time1 - time0
     print("Time elapsed: ", atime)
