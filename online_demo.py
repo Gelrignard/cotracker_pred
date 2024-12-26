@@ -13,6 +13,10 @@ import numpy as np
 from cotracker.utils.visualizer import Visualizer
 from cotracker.predictor import CoTrackerOnlinePredictor
 
+#use tic and toc to measure time
+from time import time as tic
+from time import time as toc
+tic()
 
 DEFAULT_DEVICE = (
     "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
@@ -102,3 +106,8 @@ if __name__ == "__main__":
     vis.visualize(
         video, pred_tracks, pred_visibility, query_frame=args.grid_query_frame
     )
+
+    # get time
+    toc()
+    atime = toc()-tic
+    print("Time elapsed: ", atime)
