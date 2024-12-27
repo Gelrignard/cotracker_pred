@@ -56,8 +56,8 @@ if __name__ == "__main__":
     model = model.to(DEFAULT_DEVICE)
 
     # Test different parameters
-    model.model.window_len = 20
-    model.step = 10
+    model.model.window_len = 60
+    model.step = model.model.window_len // 2
 
     # try offline method
     # tmodel = torch.hub.load("facebookresearch/co-tracker", "cotracker3_offline")
@@ -90,6 +90,15 @@ if __name__ == "__main__":
             grid_query_frame=grid_query_frame,
             queries = query_frame
         )
+    
+    queries = torch.tensor([
+        [0., 400., 350.],  # point tracked from the first frame
+        [10., 600., 500.], # frame number 10
+        [20., 750., 600.], # ...
+        [30., 900., 200.]
+    ])
+    if torch.cuda.is_available():
+        queries = queries.cuda()
 
     # time1 = toc()
     # atime = time1 - time0
@@ -120,6 +129,7 @@ if __name__ == "__main__":
                 is_first_step,
                 grid_size=args.grid_size,
                 grid_query_frame=args.grid_query_frame,
+                query_frame=queries[None]
             )
             # current_frame = i
             is_first_step = False
