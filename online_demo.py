@@ -56,7 +56,7 @@ if __name__ == "__main__":
     model = model.to(DEFAULT_DEVICE)
 
     # Test different parameters
-    model.model.window_len = 60
+    model.model.window_len = 50
     model.step = model.model.window_len // 2
 
     # try offline method
