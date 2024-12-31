@@ -56,7 +56,7 @@ if __name__ == "__main__":
     model = model.to(DEFAULT_DEVICE)
 
     # Test different parameters
-    model.model.window_len = 50
+    model.model.window_len = 20
     model.step = model.model.window_len // 2
 
     # try offline method
@@ -72,6 +72,18 @@ if __name__ == "__main__":
     # print("Time elapsed before video: ", atime)
     # vis = Visualizer(save_dir='./videos', pad_value=100)
     # vis.visualize(video=video, tracks=pred_tracks, visibility=pred_visibility, filename='teaser')
+    '''
+    my_video = iio.imiter(args.video_path, plugin="FFMPEG")
+    print("my_video", my_video)
+    read_video = read_video_from_path(args.video_path)
+    print("read_video_len: ", len(read_video))
+    # see read_video
+    for i, frame in enumerate(read_video):
+        # convert to tensor
+        frame = torch.tensor(frame)
+        print(f"Frame {i} shape: {frame.size()}")
+    '''
+    read_video = read_video_from_path(args.video_path)
     
 
 
@@ -91,14 +103,9 @@ if __name__ == "__main__":
             queries = query_frame
         )
     
-    queries = torch.tensor([
-        [0., 400., 350.],  # point tracked from the first frame
-        [10., 600., 500.], # frame number 10
-        [20., 750., 600.], # ...
-        [30., 900., 200.]
-    ])
-    if torch.cuda.is_available():
-        queries = queries.cuda()
+
+    # if torch.cuda.is_available():
+    #     queries = queries.cuda()
 
     # time1 = toc()
     # atime = time1 - time0
@@ -108,16 +115,23 @@ if __name__ == "__main__":
     is_first_step = True
     current_frame = 1
     print("Model step: ", model.step)
-    for i, frame in enumerate(
-        iio.imiter(
-            args.video_path,
-            plugin="FFMPEG",
-        )
-    ):
+    # for i, frame in enumerate(
+    #     iio.imiter(
+    #         args.video_path,
+    #         plugin="FFMPEG",
+    #     )
+    # ):
+    for i, frame in enumerate(read_video):
+        # frame = torch.tensor(frame)
+
         # print(f"Processing frame {i}")
         # print(f"Frame shape: {frame.shape}")
         # print(f"Window frames: {len(window_frames)}")
         if i % model.step == 0 and i != 0:
+            queries = torch.tensor([
+                    # [0., 400., 350.],  # point tracked from the first frame
+                    [i-20, 600., 500.], # frame number 10
+                ])
             # The a value I set here is proved to be useless: The step is already done in _process_step
             # print("Window frame size: ", len(window_frames))
             # a = max( - model.step * 2, -len(window_frames))
@@ -135,6 +149,7 @@ if __name__ == "__main__":
             is_first_step = False
             if pred_tracks is not None:
                 print("Tracks size: ", pred_tracks.size())
+                # print("Tracks: ", pred_tracks)
         window_frames.append(frame)
     # Processing the final video frames in case video length is not a multiple of model.step
 
@@ -151,6 +166,7 @@ if __name__ == "__main__":
         is_first_step,
         grid_size=args.grid_size,
         grid_query_frame=args.grid_query_frame,
+        query_frame=queries[None]
     )
     if pred_tracks is not None:
         print("Tracks size: ", pred_tracks.size())
@@ -163,7 +179,7 @@ if __name__ == "__main__":
 
     # save a video with predicted tracks
     seq_name = args.video_path.split("/")[-1]
-    video = torch.tensor(np.stack(window_frames), device=DEFAULT_DEVICE).permute(
+    video = torch.tensor(np.stack(read_video), device=DEFAULT_DEVICE).permute(
         0, 3, 1, 2
     )[None]
     vis = Visualizer(save_dir="./saved_videos", pad_value=120, linewidth=3)

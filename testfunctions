@@ -1,0 +1,22 @@
+import os
+import torch
+import argparse
+import imageio.v3 as iio
+import numpy as np
+
+from cotracker.utils.visualizer import Visualizer, read_video_from_path
+from cotracker.predictor import CoTrackerOnlinePredictor
+
+"""
+This file is for testing some code for CloudTracker
+"""
+
+query_frame = torch.tensor([
+        [0., 400., 350.],  # point tracked from the first frame
+        [10, 600., 500.], # frame number 10
+    ])
+
+frame_num = 100
+
+query_frame[:, 0] += frame_num 
+print(query_frame)
