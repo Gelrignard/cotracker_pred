@@ -50,6 +50,7 @@ class ClothTracker:
         self.frame_num = 0
         self.window_frame = []
         self.query_frame = None
+        self.is_first_step = True
 
     def _process_step(self, window_frames, is_first_step, grid_size = 10, grid_query_frame = 0, query_frame=None):
         video_chunk = (
@@ -138,23 +139,24 @@ class ClothTracker:
         my_video = read_video_from_path(video_path)
         for i, frame in enumerate(my_video):
             if i % test_frame_flow_size == 0 and i != 0:
+                query = torch.tensor([[0, 400., 350.]])
+                self.modify_query_frame(query)
                 frames = my_video[i - test_frame_flow_size : i]
                 pred_tracks, pred_visibility = self.track(frames)
                 print(f"Frame {i} shape: {pred_tracks.size()}")
-                query = torch.tensor([[0, 400., 350.]])
-                self.modify_query_frame(query)
                 res = i
         # add final frames
         frames = my_video[res+1:]
         pred_tracks, pred_visibility = self.track(frames)
         print(f"Frame {i} shape: {pred_tracks.size()}")
-        video = torch.tensor(np.stack(my_video), device=self.DEFAULT_DEVICE).permute(
-            0, 3, 1, 2
-        )[None]
-        vis = Visualizer(save_dir="./saved_videos", pad_value=120, linewidth=3)
-        vis.visualize(
-            video, pred_tracks, pred_visibility, query_frame=self.grid_query_frame
-        )
+        # visualize the result
+        # video = torch.tensor(np.stack(my_video), device=self.DEFAULT_DEVICE).permute(
+        #     0, 3, 1, 2
+        # )[None]
+        # vis = Visualizer(save_dir="./saved_videos", pad_value=120, linewidth=3)
+        # vis.visualize(
+        #     video, pred_tracks, pred_visibility, query_frame=self.grid_query_frame
+        # )
 
     def modify_query_frame(self, query_frame):
         # Query is a n*3 tensor where n is the number of query points. The first column is the frame number of the input figure stream.
@@ -164,6 +166,8 @@ class ClothTracker:
             new_query_frame[:,0] += self.frame_num
             new_query_frame = new_query_frame[None]
         self.query_frame = new_query_frame
+        # by reseting, the query frame will be updated
+        self.reset()
 
 
 if __name__ == "__main__":
