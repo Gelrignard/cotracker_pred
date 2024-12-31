@@ -49,7 +49,7 @@ class ClothTracker:
         # reset the frame input from camera feed
         self.frame_num = 0
         self.window_frame = []
-        self.query_frame = None
+        # self.query_frame = None
         self.is_first_step = True
 
     def _process_step(self, window_frames, is_first_step, grid_size = 10, grid_query_frame = 0, query_frame=None):
@@ -132,14 +132,20 @@ class ClothTracker:
             query_frame = new_query_frame
         )
         # print(f"Frame {self.frame_num}: {pred_tracks}")
+        self.pred_tracks = pred_tracks
+        self.pred_visibility = pred_visibility
         return pred_tracks, pred_visibility
     
     def test_with_video_input(self, video_path = "./assets/apple.mp4"):
         test_frame_flow_size = 15
         my_video = read_video_from_path(video_path)
+
         for i, frame in enumerate(my_video):
             if i % test_frame_flow_size == 0 and i != 0:
-                query = torch.tensor([[0, 400., 350.]])
+                query = torch.tensor([
+                    [0, 400., 350.],
+                    [1, 300., 300.]
+                    ])
                 self.modify_query_frame(query)
                 frames = my_video[i - test_frame_flow_size : i]
                 pred_tracks, pred_visibility = self.track(frames)
@@ -149,14 +155,17 @@ class ClothTracker:
         frames = my_video[res+1:]
         pred_tracks, pred_visibility = self.track(frames)
         print(f"Frame {i} shape: {pred_tracks.size()}")
+        latest_points = self.get_latest_points_position()
+        print(f"Latest points: {latest_points}")
         # visualize the result
-        # video = torch.tensor(np.stack(my_video), device=self.DEFAULT_DEVICE).permute(
-        #     0, 3, 1, 2
-        # )[None]
-        # vis = Visualizer(save_dir="./saved_videos", pad_value=120, linewidth=3)
-        # vis.visualize(
-        #     video, pred_tracks, pred_visibility, query_frame=self.grid_query_frame
-        # )
+        # only visualize since the last modification of the query frame
+        video = torch.tensor(np.stack(self.window_frame), device=self.DEFAULT_DEVICE).permute(
+            0, 3, 1, 2
+        )[None]
+        vis = Visualizer(save_dir="./saved_videos", pad_value=120, linewidth=3)
+        vis.visualize(
+            video, pred_tracks, pred_visibility, query_frame=self.grid_query_frame
+        )
 
     def modify_query_frame(self, query_frame):
         # Query is a n*3 tensor where n is the number of query points. The first column is the frame number of the input figure stream.
@@ -168,6 +177,10 @@ class ClothTracker:
         self.query_frame = new_query_frame
         # by reseting, the query frame will be updated
         self.reset()
+
+    def get_latest_points_position(self):
+        # the latest point position is the last point as shape of [p1([x,y]), p2, p3, ...]
+        return self.pred_tracks[0,-1]
 
 
 if __name__ == "__main__":
