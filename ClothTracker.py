@@ -117,7 +117,7 @@ class ClothTracker:
                         grid_query_frame = self.grid_query_frame,
                         query_frame = new_query_frame
                     )
-                    print(f"c {i} shape: {pred_tracks.size()}")
+                    print(f"trk {i} shape: {pred_tracks.size()}")
                 
             # add frames to the window
             self.window_frame.append(frame)
@@ -141,6 +141,8 @@ class ClothTracker:
                 frames = my_video[i - test_frame_flow_size : i]
                 pred_tracks, pred_visibility = self.track(frames)
                 print(f"Frame {i} shape: {pred_tracks.size()}")
+                query = torch.tensor([[0, 400., 350.]])
+                self.modify_query_frame(query)
                 res = i
         # add final frames
         frames = my_video[res+1:]
@@ -166,11 +168,10 @@ class ClothTracker:
 
 if __name__ == "__main__":
     tracker = ClothTracker()
-
     queries = torch.tensor([
-        # [0., 400., 350.],  # point tracked from the first frame
+        [0., 400., 350.],  # point tracked from the first frame
         [5, 600., 500.], # frame number 10
     ])
-    tracker.modify_query_frame(queries)
+    # tracker.modify_query_frame(queries)
     tracker.test_with_video_input()
 
