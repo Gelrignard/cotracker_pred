@@ -179,7 +179,7 @@ class ClothTracker:
         self.reset()
 
     def get_latest_points_position(self):
-        # the latest point position is the last point as shape of [p1([x,y]), p2, p3, ...]
+        # the latest key point position is the last point as shape of [p1([x,y]), p2, p3, ...]
         return self.pred_tracks[0,-1]
 
 
