@@ -168,6 +168,8 @@ class CoTrackerThreeOnline(CoTrackerThreeBase):
         self.online_coords_predicted = None
         self.online_vis_predicted = None
         self.online_conf_predicted = None
+        # add a buffer to store the previous step frames to avoid recomputation of the convolutional features
+        self.prev_steps = []
 
     def forward_window(
         self,
@@ -381,7 +383,21 @@ class CoTrackerThreeOnline(CoTrackerThreeBase):
                 fmaps.append(fmaps_chunk.reshape(B, T_chunk, C_chunk, H_chunk, W_chunk))
             fmaps = torch.cat(fmaps, dim=1).reshape(-1, C_chunk, H_chunk, W_chunk)
         else:
-            fmaps = self.fnet(video.reshape(-1, C_, H, W))
+            """
+            This part is modified to avoid recomputing the convolutional features that I have already computed in the previous step.
+            """
+            # in this case, we compute the features for the whole input
+            # but in the provious step, we already computed the features for last step
+            test_avoid_compute = True
+            if len(self.prev_steps) > step and test_avoid_compute:
+                prev_step = self.prev_steps[-step:]
+                video_without_last_step = video[:, step:]
+                fmaps = self.fnet(video_without_last_step.reshape(-1, C_, H, W))
+                fmaps = torch.cat([prev_step, fmaps], dim=0)
+                self.prev_steps = fmaps
+            else:
+                fmaps = self.fnet(video.reshape(-1, C_, H, W))
+                self.prev_steps = fmaps
         fmaps = fmaps.permute(0, 2, 3, 1)
         fmaps = fmaps / torch.sqrt(
             torch.maximum(

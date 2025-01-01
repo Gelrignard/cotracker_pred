@@ -11,7 +11,16 @@ from cotracker.predictor import CoTrackerOnlinePredictor
 This is a wrapper class for the CoTrackerOnlinePredictor class from the CoTracker library.
 This class is used to track the movement of a piece of cloth from a camera feed.
 The camera feed is a set of frames.
-The CoTrackerOnlinePredictor class is used to track the movement of the cloth in the frames.
+The CoTrackerOnlinePredictor class is used to track the movement of the cloth in the frames. Everything is based on that real-time tracking class.
+
+As what we discussed in the meeting, I implementedt the ClothTracker class with these functions:
+1. Input a set of frames, and track the movement of key points on the cloth.
+2. Modify the query frame, which is the key points that we want to track.
+3. Get the latest key point position.
+4. I can modify the window length and step of the model, but now I set the default window length to 10 and step to 5.
+5. I can also get the latest key points position.
+
+See the avoidance of recomputation of frames, go to cotracker/models/core/cotracker/cotracker_online.py, CoTrackerThreeOnline class, forward method, around line 386.
 """
 
 class ClothTracker:
@@ -46,6 +55,11 @@ class ClothTracker:
         self.pred_visibility = None
 
     def reset(self):
+        """
+        This function resets the frame input.
+        It is used to make sure that when the query frame is modified, the frame input is reset.
+        Just reinitialize is very time consuming, so just reset the necessary parts.
+        """
         # reset the frame input from camera feed
         self.frame_num = 0
         self.window_frame = []
@@ -53,6 +67,10 @@ class ClothTracker:
         self.is_first_step = True
 
     def _process_step(self, window_frames, is_first_step, grid_size = 10, grid_query_frame = 0, query_frame=None):
+        """
+        This is a function copied from online_demo.py.
+        It is used to process a window length of frames.
+        """
         video_chunk = (
             torch.tensor(
                 np.stack(window_frames[-self.model.step * 2 :]), device=self.DEFAULT_DEVICE
@@ -69,6 +87,11 @@ class ClothTracker:
         )
 
     def track(self, frames, window_len = 10):
+        """
+        This function is modified from the online_demo.py.
+        It is a way to track a length of frames.
+        """
+        # The frame can be see as a numpy array of shape (T, H, W, C), or (number of frames, height, width, channel = 3)
         # set window length and step
         self.model.model.window_len = window_len
         self.model.step = self.model.model.window_len // 2
@@ -137,6 +160,10 @@ class ClothTracker:
         return pred_tracks, pred_visibility
     
     def test_with_video_input(self, video_path = "./assets/apple.mp4"):
+        """
+        This function is my test function.
+        I use the default video path, make this video into frame input, and track the movement of the cloth.
+        """
         test_frame_flow_size = 15
         my_video = read_video_from_path(video_path)
 
@@ -168,6 +195,9 @@ class ClothTracker:
         )
 
     def modify_query_frame(self, query_frame):
+        """
+        This function is used to modify the query frame.
+        """
         # Query is a n*3 tensor where n is the number of query points. The first column is the frame number of the input figure stream.
         # Therefore, we need to add the frame number to the query points.
         new_query_frame = query_frame
@@ -179,6 +209,9 @@ class ClothTracker:
         self.reset()
 
     def get_latest_points_position(self):
+        """
+        This function is used to get the latest key point position.
+        """
         # the latest key point position is the last point as shape of [p1([x,y]), p2, p3, ...]
         return self.pred_tracks[0,-1]
 
