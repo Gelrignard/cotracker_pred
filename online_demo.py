@@ -128,10 +128,10 @@ if __name__ == "__main__":
         # print(f"Frame shape: {frame.shape}")
         # print(f"Window frames: {len(window_frames)}")
         if i % model.step == 0 and i != 0:
-            queries = torch.tensor([
-                    # [0., 400., 350.],  # point tracked from the first frame
-                    [i-20, 600., 500.], # frame number 10
-                ])
+            # queries = torch.tensor([
+            #         # [0., 400., 350.],  # point tracked from the first frame
+            #         [i-20, 600., 500.], # frame number 10
+            #     ])
             # The a value I set here is proved to be useless: The step is already done in _process_step
             # print("Window frame size: ", len(window_frames))
             # a = max( - model.step * 2, -len(window_frames))
@@ -142,8 +142,7 @@ if __name__ == "__main__":
                 # window_frames[a :],
                 is_first_step,
                 grid_size=args.grid_size,
-                grid_query_frame=args.grid_query_frame,
-                query_frame=queries[None]
+                grid_query_frame=args.grid_query_frame
             )
             # current_frame = i
             is_first_step = False
@@ -165,8 +164,7 @@ if __name__ == "__main__":
         window_frames[-(i % model.step) - model.step - 1 :],
         is_first_step,
         grid_size=args.grid_size,
-        grid_query_frame=args.grid_query_frame,
-        query_frame=queries[None]
+        grid_query_frame=args.grid_query_frame
     )
     if pred_tracks is not None:
         print("Tracks size: ", pred_tracks.size())

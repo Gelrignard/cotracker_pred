@@ -60,6 +60,7 @@ class CoTrackerThreeBase(nn.Module):
         self.latent_dim = 128
 
         self.linear_layer_for_vis_conf = linear_layer_for_vis_conf
+        # fnet is the feature extractor convolutional network
         self.fnet = BasicEncoder(input_dim=3, output_dim=self.latent_dim, stride=stride)
 
         highres_dim = 128
